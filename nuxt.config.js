@@ -1,7 +1,16 @@
-module.exports = {
-  /*
-  ** Headers of the page
-  */
+const {
+  getConfigForKeys
+} = require('./lib/config.js')
+const ctfConfig = getConfigForKeys([
+  'CTF_PAGE_TYPE_ID',
+  'CTF_SPACE_ID',
+  'CTF_CDA_ACCESS_TOKEN'
+])
+const {
+  createClient
+} = require('./plugins/contentful')
+const cdaClient = createClient(ctfConfig)
+const config = {
   head: {
     title: 'portfolio',
     meta: [
@@ -15,7 +24,6 @@ module.exports = {
     modules: [
       '@nuxtjs/bulma'
     ],
-
   },
   /*
   ** Customize the progress bar color
@@ -28,7 +36,7 @@ module.exports = {
     /*
     ** Run ESLint on save
     */
-    extend (config, { isDev, isClient }) {
+    extend(config, { isDev, isClient }) {
       if (isDev && isClient) {
         config.module.rules.push({
           enforce: 'pre',
@@ -38,5 +46,29 @@ module.exports = {
         })
       }
     }
-  }
+  },
+    plugins: [{
+        src: '~plugins/contentful'
+      }],
+      generate: {
+        routes() {
+          return cdaClient.getEntries({
+            'content_type': ctfConfig.CTF_PAGE_TYPE_ID
+          }).then(entries => {
+            return [
+              ...entries.items.map(entry => `/page/${entry.fields.path}`)
+            ]
+          })
+        }
+      },
+      env: {
+        CTF_SPACE_ID: ctfConfig.CTF_SPACE_ID,
+        CTF_CDA_ACCESS_TOKEN: ctfConfig.CTF_CDA_ACCESS_TOKEN,
+        CTF_PAGE_TYPE_ID: ctfConfig.CTF_PAGE_TYPE_ID
+      }
 }
+
+module.exports = {
+    /*
+     ** Headers of the page
+*/}
